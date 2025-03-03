@@ -1,49 +1,109 @@
-from src.ga.representation import Strategy, FixedStrategies
+from typing import List, Dict, Tuple
 
 
-def fitness(individual: Strategy, ipd_rounds: int) -> int:
+def fitness(
+    player: List[int],
+    opponents: List[List[int]],
+    memory_size: int,
+    rounds: int,
+    payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]]
+) -> int:
     """
-    Evaluates an individual's fitness based on performance against fixed strategies.
+    Evaluates a player's fitness based on performance against opponents.
 
     Args:
-        individual: The individual to evaluate.
-        ipd_rounds: The number of IPD rounds.
+        player: A bit string representing the player strategy to evaluate.
+        opponents: The opponent bit string representations to evaluate against.
+        memory_size: The number of past opponent moves each strategy considers.
+        rounds: The number of IPD rounds to play.
+        payoff_matrix: A dictionary representing a payoff matrix.
 
     Returns:
-        The total score against fixed strategies.
+        The accumulated score achieved by the player against all the opponents.
     """
-    opponents = [strategy.value for strategy in FixedStrategies]
-    return sum(play_ipd(individual, opponent, ipd_rounds) for opponent in opponents)
+    return sum(
+        play_ipd(player, opponent, memory_size, rounds, payoff_matrix)[0] for opponent in opponents
+    )
 
 
-def play_ipd(player: Strategy, opponent: Strategy, rounds: int) -> int:
+def play_ipd(
+    player: List[int],
+    opponent: List[int],
+    memory_size: int,
+    rounds: int,
+    payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]]
+) -> Tuple[int, int]:
     """
-    Simulates an Iterated Prisoner's Dilemma match.
+    Simulates an Iterated Prisoner's Dilemma match between two players.
+
+    Each player's decision is determined by indexing their bit-string representation using the
+    opponent's past moves (history).
 
     Args:
-        player: The player's strategy.
-        opponent: The opponent's strategy.
-        rounds: The number of rounds.
+        player: A bit string representing the player strategy.
+        opponent: A bit string representing the opponent strategy.
+        memory_size: The number of past opponent moves each strategy considers.
+        rounds: The number of rounds to play.
+        payoff_matrix: A dictionary representing a payoff matrix.
 
     Returns:
-        The total score achieved by the player's strategy.
+        A tuple (player_score, opponent_score) with the accumulated scores.
     """
-    score = 0
-    last_round = (0, 0)
+    player_score = 0
+    opponent_score = 0
+    player_history = []
+    opponent_history = []
 
     for _ in range(rounds):
-        p_move = player.move(last_round)
-        o_move = opponent.move(last_round)
+        player_idx = get_move_index(opponent_history, memory_size)
+        opponent_idx = get_move_index(player_history, memory_size)
 
-        if (p_move, o_move) == (0, 0):
-            score += 3
-        elif (p_move, o_move) == (0, 1):
-            score += 0
-        elif (p_move, o_move) == (1, 0):
-            score += 5
-        elif (p_move, o_move) == (1, 1):
-            score += 1
+        player_move = player[player_idx]
+        opponent_move = opponent[opponent_idx]
 
-        last_round = (p_move, o_move)
+        score_player, score_opponent = payoff_matrix[(player_move, opponent_move)]
+        player_score += score_player
+        opponent_score += score_opponent
 
-    return score
+        player_history.append(player_move)
+        opponent_history.append(opponent_move)
+
+    return player_score, opponent_score
+
+
+def get_move_index(history: List[int], memory_size: int) -> int:
+    """
+    Computes the move index into the bit string representation based on the opponent's history.
+
+    To compute the index:
+    - First, consider the effective history length, L, as min(len(history), memory_size). This
+        enures that only the most recent moves are used.
+    - Next, compute an offset that accounts for all histories shorter than L. This is computed as
+        (2^L) -1.
+    - Then, convert the effective history moves into a binary number
+    - Finally, sum the offset and this binary number
+
+    Args:
+        history: List of past moves (each 0 or 1).
+        memory_size: The number of past opponent moves each strategy considers.
+
+    Returns:
+        The computed move index into the bit string representation.
+    """
+    # Determine effective history length
+    L = min(len(history), memory_size)
+
+    if L == 0:
+        # First move always corresponds to index 0
+        return 0
+
+    # Use only the last L moves
+    effective_history = history[-L:]
+
+    offset = (2 ** L) - 1
+
+    # Convert effective history (list of bits) to its integer value
+    binary_string = "".join(map(str, effective_history))
+    binary_val = int(binary_string, 2)
+
+    return offset + binary_val

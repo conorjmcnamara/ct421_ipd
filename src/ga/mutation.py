@@ -1,8 +1,8 @@
 import random
-from src.ga.representation import Strategy
+from typing import List
 
 
-def bit_flip_mutation(individual: Strategy, mutation_rate: float) -> Strategy:
+def bit_flip_mutation(individual: List[int], mutation_rate: float) -> List[int]:
     """
     Applies bit flip mutation to an individual.
 
@@ -13,6 +13,4 @@ def bit_flip_mutation(individual: Strategy, mutation_rate: float) -> Strategy:
     Returns:
         The mutated individual.
     """
-    return Strategy(
-        [bit if random.random() > mutation_rate else 1 - bit for bit in individual.bitstring]
-    )
+    return [bit if random.random() > mutation_rate else 1 - bit for bit in individual]

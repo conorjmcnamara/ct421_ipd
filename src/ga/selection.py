@@ -1,14 +1,13 @@
 import copy
 import random
 from typing import List
-from src.ga.representation import Strategy
 
 
 def elitism(
-    population: List[Strategy],
+    population: List[List[int]],
     fitness_scores: List[int],
     elitism_count: int
-) -> List[Strategy]:
+) -> List[List[int]]:
     """
     Selects the top `elitism_count` individuals from a population based on their fitness scores.
 
@@ -23,17 +22,18 @@ def elitism(
     return [
         copy.deepcopy(population[i]) for i in sorted(
             range(len(fitness_scores)),
-            key=lambda j: fitness_scores[j]
+            key=lambda j: fitness_scores[j],
+            reverse=True
         )[:elitism_count]
     ]
 
 
 def tournament_selection(
-    population: List[Strategy],
+    population: List[List[int]],
     fitness_scores: List[int],
     tournament_size: int,
     num_rounds: int
-) -> List[Strategy]:
+) -> List[List[int]]:
     """
     Selects individuals from a population using tournament selection, where each tournament selects
     a winner among a random sample of individuals based on their fitness scores. This is repeated

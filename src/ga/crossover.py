@@ -1,9 +1,8 @@
 import random
-from typing import Tuple
-from src.ga.representation import Strategy
+from typing import List, Tuple
 
 
-def single_point_crossover(parent1: Strategy, parent2: Strategy) -> Tuple[Strategy, Strategy]:
+def single_point_crossover(parent1: List[int], parent2: List[int]) -> Tuple[List[int], List[int]]:
     """
     Performs single-point crossover between two parents to produce two offspring.
 
@@ -14,8 +13,8 @@ def single_point_crossover(parent1: Strategy, parent2: Strategy) -> Tuple[Strate
     Returns:
         A tuple containing two offspring.
     """
-    point = random.randint(1, len(parent1.bitstring) - 1)
-    offspring1 = Strategy(parent1.bitstring[:point] + parent2.bitstring[point:])
-    offspring2 = Strategy(parent2.bitstring[:point] + parent1.bitstring[point:])
+    point = random.randint(1, len(parent1) - 1)
+    offspring1 = parent1[:point] + parent2[point:]
+    offspring2 = parent2[:point] + parent1[point:]
 
     return offspring1, offspring2
