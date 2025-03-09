@@ -1,3 +1,4 @@
+import random
 from typing import List, Dict, Tuple
 
 
@@ -6,7 +7,8 @@ def fitness(
     opponents: List[List[int]],
     memory_size: int,
     rounds: int,
-    payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]]
+    payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]],
+    noise_rate: float
 ) -> int:
     """
     Evaluates a player's fitness based on performance against opponents.
@@ -17,12 +19,14 @@ def fitness(
         memory_size: The number of past opponent moves each strategy considers.
         rounds: The number of IPD rounds to play.
         payoff_matrix: A dictionary representing a payoff matrix.
+        noise_rate: The probability of flipping a player's move.
 
     Returns:
         The accumulated score achieved by the player against all the opponents.
     """
     return sum(
-        play_ipd(player, opponent, memory_size, rounds, payoff_matrix)[0] for opponent in opponents
+        play_ipd(player, opponent, memory_size, rounds, payoff_matrix, noise_rate)[0]
+        for opponent in opponents
     )
 
 
@@ -31,7 +35,8 @@ def play_ipd(
     opponent: List[int],
     memory_size: int,
     rounds: int,
-    payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]]
+    payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]],
+    noise_rate: float = 0.0
 ) -> Tuple[int, int]:
     """
     Simulates an Iterated Prisoner's Dilemma match between two players.
@@ -45,7 +50,7 @@ def play_ipd(
         memory_size: The number of past opponent moves each strategy considers.
         rounds: The number of rounds to play.
         payoff_matrix: A dictionary representing a payoff matrix.
-
+        noise_rate: The probability of flipping a player's move (default: 0.0).
     Returns:
         A tuple (player_score, opponent_score) with the accumulated scores.
     """
@@ -60,6 +65,12 @@ def play_ipd(
 
         player_move = player[player_idx]
         opponent_move = opponent[opponent_idx]
+
+        # Apply noise
+        if random.random() < noise_rate:
+            player_move = 1 - player_move
+        if random.random() < noise_rate:
+            opponent_move = 1 - opponent_move
 
         score_player, score_opponent = payoff_matrix[(player_move, opponent_move)]
         player_score += score_player

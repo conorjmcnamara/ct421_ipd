@@ -26,7 +26,9 @@ class GeneticAlgorithm:
         opponents: List[Type[Strategy]],
         memory_size: int,
         rounds: int,
-        payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]]
+        payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]],
+        noise_rate: float,
+        co_evolution: bool
     ):
         """
         Initializes the genetic algorithm.
@@ -45,6 +47,9 @@ class GeneticAlgorithm:
             memory_size: The number of past opponent moves each strategy considers.
             rounds: The number of IPD rounds to play.
             payoff_matrix: A dictionary representing a payoff matrix.
+            noise_rate: The probability of flipping a player's move.
+            co_evolution: If True, individuals compete against each other instead of fixed
+                opponents.
         """
         self.population_size = population_size
         self.population = [
@@ -68,6 +73,8 @@ class GeneticAlgorithm:
         self.memory_size = memory_size
         self.rounds = rounds
         self.payoff_matrix = payoff_matrix
+        self.noise_rate = noise_rate
+        self.co_evolution = co_evolution
 
         self.avg_fitness_per_gen = []
         self.best_fitness_per_gen = []
@@ -80,17 +87,8 @@ class GeneticAlgorithm:
         Runs the genetic algorithm to evolve strategies.
         """
         for _ in range(self.generations):
-            fitness_scores = [
-                fitness(
-                    individual,
-                    self.opponents,
-                    self.memory_size,
-                    self.rounds,
-                    self.payoff_matrix
-                )
-                for individual in self.population
-            ]
-
+            # Compute fitness
+            fitness_scores = self._get_fitness_scores()
             self.avg_fitness_per_gen.append(sum(fitness_scores) / len(fitness_scores))
             gen_best_fitness = max(fitness_scores)
             self.best_fitness_per_gen.append(gen_best_fitness)
@@ -142,6 +140,42 @@ class GeneticAlgorithm:
             # Replacement
             self.population = elite_individuals + next_population
 
+    def _get_fitness_scores(self) -> List[float]:
+        """
+        Computes the fitness scores for all individuals in the population.
+
+        If co-evolution is enabled, each individual computes against every other individual in the
+        population (excluding itself). Otherwise, individuals are evaluated against a fixed set of
+        opponents.
+
+        Returns:
+            A list representing the fitness score for each individual in the population.
+        """
+        if self.co_evolution:
+            return [
+                fitness(
+                    self.population[i],
+                    self.population[:i] + self.population[i+1:],
+                    self.memory_size,
+                    self.rounds,
+                    self.payoff_matrix,
+                    self.noise_rate
+                )
+                for i in range(self.population_size)
+            ]
+        else:
+            return [
+                fitness(
+                    individual,
+                    self.opponents,
+                    self.memory_size,
+                    self.rounds,
+                    self.payoff_matrix,
+                    self.noise_rate
+                )
+                for individual in self.population
+            ]
+
     def save_results(self, path: str) -> None:
         """
         Saves the results and configuration of the genetic algorithm to a JSON file.
@@ -164,10 +198,14 @@ class GeneticAlgorithm:
                 "mutation_func": self.mutation_func.__name__,
                 "elitism_rate": self.elitism_rate,
                 "tournament_size": self.tournament_size,
-                "opponents": [opponent.__name__ for opponent in self.opponent_strategy_classes],
+                "opponents":
+                    [] if self.co_evolution else
+                    [opponent.__name__ for opponent in self.opponent_strategy_classes],
                 "memory_size": self.memory_size,
                 "rounds": self.rounds,
-                "payoff_matrix": {str(key): str(value) for key, value in self.payoff_matrix.items()}
+                "payoff_matrix": {str(k): str(v) for k, v in self.payoff_matrix.items()},
+                "noise_rate": self.noise_rate,
+                "co_evolution": self.co_evolution
             }
         }
 

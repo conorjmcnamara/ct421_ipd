@@ -27,7 +27,8 @@ def post_process_ipd(
         (0, 1): (0, 5),  # Player cooperates, opponent defects
         (1, 0): (5, 0),  # Player defects, opponent cooperates
         (1, 1): (1, 1)   # Both defect
-    }
+    },
+    noise_rate: float = 0.0
 ) -> None:
     """
     Runs a series of IPD games where each strategy plays against every other strategy, including
@@ -40,6 +41,7 @@ def post_process_ipd(
         memory_size: The number of past opponent moves each strategy considers (default: 2).
         rounds: The number of IPD rounds to play (default: 50).
         payoff_matrix: A dictionary representing a payoff matrix.
+        noise_rate: The probability of flipping a player's move (default: 0.0).
     """
     # Determine the evolved strategy
     max_fitness = float("-inf")
@@ -82,7 +84,7 @@ def post_process_ipd(
                 continue
 
             player_score, opponent_score = play_ipd(
-                player, opponent, memory_size, rounds, payoff_matrix
+                player, opponent, memory_size, rounds, payoff_matrix, noise_rate
             )
 
             results[player_name]["overall_score"] += player_score
@@ -114,7 +116,7 @@ def get_majority_strategy(strategies: List[List[int]]) -> List[int]:
         best_strategies: A list of strategies.
 
     Returns:
-        The majority strategy
+        The majority strategy.
     """
     transposed_bits = zip(*strategies)
 

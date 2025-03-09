@@ -42,7 +42,9 @@ def run_ga(
         (0, 1): (0, 5),  # Player cooperates, opponent defects
         (1, 0): (5, 0),  # Player defects, opponent cooperates
         (1, 1): (1, 1)   # Both defect
-    }
+    },
+    noise_rates: List[float] = [0, 0.05, 0.2],
+    co_evolutions: List[bool] = [False, True]
 ) -> None:
     """
     Runs the genetic algorithm using various parameter combinations.
@@ -63,6 +65,8 @@ def run_ga(
         memory_size: The number of past opponent moves each strategy considers (default: 2).
         rounds: The number of IPD rounds to play (default: 50).
         payoff_matrix: A dictionary representing a payoff matrix.
+        noise_rates: A list of noise rates to test (default: [0, 0.05, 0.2]).
+        co_evolutions: A list of co-evolution scenarios to test (default: [False, True]).
     """
     for i, opponents in enumerate(opponent_environments):
         for population_size in population_sizes:
@@ -70,30 +74,45 @@ def run_ga(
                 for mutation_rate in mutation_rates:
                     for crossover_func in crossover_funcs:
                         for mutation_func in mutation_funcs:
-                            ga = GeneticAlgorithm(
-                                population_size,
-                                crossover_rate,
-                                crossover_func,
-                                mutation_rate,
-                                mutation_func,
-                                generations,
-                                early_stop_threshold,
-                                elitism_rate,
-                                tournament_size,
-                                opponents,
-                                memory_size,
-                                rounds,
-                                payoff_matrix
-                            )
-                            ga.evolve()
+                            for noise_rate in noise_rates:
+                                for co_evolution in co_evolutions:
+                                    ga = GeneticAlgorithm(
+                                        population_size,
+                                        crossover_rate,
+                                        crossover_func,
+                                        mutation_rate,
+                                        mutation_func,
+                                        generations,
+                                        early_stop_threshold,
+                                        elitism_rate,
+                                        tournament_size,
+                                        opponents,
+                                        memory_size,
+                                        rounds,
+                                        payoff_matrix,
+                                        noise_rate,
+                                        co_evolution
+                                    )
+                                    ga.evolve()
 
-                            results_path = os.path.join(
-                                curr_dir,
-                                f"data/results/env_{i}/{population_size}_pop_{crossover_rate}_"
-                                f"{crossover_func.__name__}_{mutation_rate}_"
-                                f"{mutation_func.__name__}.json"
-                            )
-                            ga.save_results(results_path)
+                                    if co_evolution:
+                                        results_path = os.path.join(
+                                            curr_dir,
+                                            f"data/results/co-evo/env_{i}/{population_size}_pop_"
+                                            f"{crossover_rate}_{crossover_func.__name__}_"
+                                            f"{mutation_rate}_{mutation_func.__name__}_"
+                                            f"{noise_rate}_noise_{co_evolution}_co-evolution.json"
+                                        )
+                                    else:
+                                        results_path = os.path.join(
+                                            curr_dir,
+                                            f"data/results/env_{i}/{population_size}_pop_"
+                                            f"{crossover_rate}_{crossover_func.__name__}_"
+                                            f"{mutation_rate}_{mutation_func.__name__}_"
+                                            f"{noise_rate}_noise_{co_evolution}_co-evolution.json"
+                                        )
+
+                                    ga.save_results(results_path)
 
 
 if __name__ == "__main__":
