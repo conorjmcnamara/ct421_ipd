@@ -37,9 +37,12 @@ class TitForTat(Strategy):
         return history[-1] if history else 0
 
 
-class TwoTitsForTat(Strategy):
+class TitForTwoTats(Strategy):
     def decide(self, history: List[int]) -> int:
-        return 1 if 1 in history[-2:] else 0
+        # Defect after two consecutive defections, otherwise cooperate
+        if len(history) >= 2 and history[-1] == 1 and history[-2] == 1:
+            return 1
+        return 0
 
 
 class GrimTrigger(Strategy):

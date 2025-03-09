@@ -2,7 +2,15 @@ import os
 from typing import List, Callable, Tuple, Type, Dict
 from src.ga.crossover import single_point_crossover
 from src.ga.mutation import bit_flip_mutation
-from src.ga.strategies import Strategy, AlwaysCooperate, AlwaysDefect, TitForTat, RandomStrategy
+from src.ga.strategies import (
+    Strategy,
+    AlwaysCooperate,
+    AlwaysDefect,
+    TitForTat,
+    RandomStrategy,
+    TitForTwoTats,
+    GrimTrigger
+)
 from src.ga.genetic_algorithm import GeneticAlgorithm
 from src.utils.analysis import analyse_results
 
@@ -14,15 +22,21 @@ def run_ga(
     crossover_funcs: List[
         Callable[[List[int], List[int]], Tuple[List[int], List[int]]]
     ] = [single_point_crossover],
-    mutation_rates: List[float] = [0.01, 0.05, 0.1],
+    mutation_rates: List[float] = [0.05, 0.1, 0.2],
     mutation_funcs: List[Callable[[List[int], float], List[int]]] = [bit_flip_mutation],
     generations: int = 500,
     early_stop_threshold: int = 200,
     elitism_rate: float = 0.05,
     tournament_size: int = 3,
-    opponents: List[Type[Strategy]] = [AlwaysCooperate, AlwaysDefect, TitForTat, RandomStrategy],
-    memory_size: int = 3,
-    rounds: int = 30,
+    opponent_environments: List[List[Type[Strategy]]] = [
+        [AlwaysCooperate],
+        [AlwaysDefect],
+        [AlwaysCooperate, AlwaysDefect],
+        [TitForTat],
+        [AlwaysCooperate, AlwaysDefect, TitForTat, RandomStrategy, TitForTwoTats, GrimTrigger]
+    ],
+    memory_size: int = 2,
+    rounds: int = 50,
     payoff_matrix: Dict[Tuple[int, int], Tuple[int, int]] = {
         (0, 0): (3, 3),  # Both cooperate
         (0, 1): (0, 5),  # Player cooperates, opponent defects
@@ -38,50 +52,50 @@ def run_ga(
         population_sizes: A list of population sizes to test (default: [50, 75, 100]).
         crossover_rates: A list of crossover rates to test (default: [0.7, 0.8, 0.9]).
         crossover_funcs: A list of crossover functions to test (default: [single_point_crossover]).
-        mutation_rates: A list of mutation rates to test (default: [0.01, 0.05, 0.1]).
+        mutation_rates: A list of mutation rates to test (default: [0.05, 0.1, 0.2]).
         mutation_funcs: A list of mutation functions to test (default: [bit_flip_mutation]).
         generations: The number of generations to run the algorithm for (default: 500).
         early_stop_threshold: The number of generations without improvement before stopping (
             default: 200).
         elitism_rate: The proportion of individuals to retain through elitism (default: 0.05).
         tournament_size: The size of the tournament for selection (default: 3).
-        opponents: A list of opponent strategy classes (default: [AlwaysCooperate, AlwaysDefect,
-            TitForTat, RandomStrategy]).
-        memory_size: The number of past opponent moves each strategy considers (default: 3).
-        rounds: The number of IPD rounds to play (default: 30).
+        opponent_environments: A nested list of opponent strategy classes.
+        memory_size: The number of past opponent moves each strategy considers (default: 2).
+        rounds: The number of IPD rounds to play (default: 50).
         payoff_matrix: A dictionary representing a payoff matrix.
     """
-    for population_size in population_sizes:
-        for crossover_rate in crossover_rates:
-            for mutation_rate in mutation_rates:
-                for crossover_func in crossover_funcs:
-                    for mutation_func in mutation_funcs:
-                        ga = GeneticAlgorithm(
-                            population_size,
-                            crossover_rate,
-                            crossover_func,
-                            mutation_rate,
-                            mutation_func,
-                            generations,
-                            early_stop_threshold,
-                            elitism_rate,
-                            tournament_size,
-                            opponents,
-                            memory_size,
-                            rounds,
-                            payoff_matrix
-                        )
-                        ga.evolve()
+    for i, opponents in enumerate(opponent_environments):
+        for population_size in population_sizes:
+            for crossover_rate in crossover_rates:
+                for mutation_rate in mutation_rates:
+                    for crossover_func in crossover_funcs:
+                        for mutation_func in mutation_funcs:
+                            ga = GeneticAlgorithm(
+                                population_size,
+                                crossover_rate,
+                                crossover_func,
+                                mutation_rate,
+                                mutation_func,
+                                generations,
+                                early_stop_threshold,
+                                elitism_rate,
+                                tournament_size,
+                                opponents,
+                                memory_size,
+                                rounds,
+                                payoff_matrix
+                            )
+                            ga.evolve()
 
-                        results_path = os.path.join(
-                            curr_dir,
-                            f"data/results/{population_size}_pop_{crossover_rate}_"
-                            f"{crossover_func.__name__}_{mutation_rate}_{mutation_func.__name__}"
-                            ".json"
-                        )
-                        ga.save_results(results_path)
+                            results_path = os.path.join(
+                                curr_dir,
+                                f"data/results/env_{i}/{population_size}_pop_{crossover_rate}_"
+                                f"{crossover_func.__name__}_{mutation_rate}_"
+                                f"{mutation_func.__name__}.json"
+                            )
+                            ga.save_results(results_path)
 
 
 if __name__ == "__main__":
     run_ga()
-    analyse_results("data/results/")
+    analyse_results("data/results/env_4/")
