@@ -33,12 +33,13 @@ def post_process_ipd(
     Runs a series of IPD games where each strategy plays against every other strategy, including
     the evolved strategy.
 
-    results_path: The path where the results will be saved.
-    evolved_strategy_dir: The directory containing the GA results JSON files.
-    strategies: A list of strategy classes to play against each other.
-    memory_size: The number of past opponent moves each strategy considers (default: 2).
-    rounds: The number of IPD rounds to play (default: 50).
-    payoff_matrix: A dictionary representing a payoff matrix.
+    Args:
+        results_path: The path where the results will be saved.
+        evolved_strategy_dir: The directory containing the GA results JSON files.
+        strategies: A list of strategy classes to play against each other.
+        memory_size: The number of past opponent moves each strategy considers (default: 2).
+        rounds: The number of IPD rounds to play (default: 50).
+        payoff_matrix: A dictionary representing a payoff matrix.
     """
     # Determine the evolved strategy
     max_fitness = float("-inf")
@@ -108,6 +109,12 @@ def get_majority_strategy(strategies: List[List[int]]) -> List[int]:
     """
     Given a list of strategies, determines the majority strategy by taking the most common bit at
     each index.
+
+    Args:
+        best_strategies: A list of strategies.
+
+    Returns:
+        The majority strategy
     """
     transposed_bits = zip(*strategies)
 
