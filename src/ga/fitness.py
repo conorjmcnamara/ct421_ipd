@@ -50,7 +50,8 @@ def play_ipd(
         memory_size: The number of past opponent moves each strategy considers.
         rounds: The number of rounds to play.
         payoff_matrix: A dictionary representing a payoff matrix.
-        noise_rate: The probability of flipping a player's move (default: 0.0).
+        noise_rate: The probability of flipping each player's move (default: 0.0).
+
     Returns:
         A tuple (player_score, opponent_score) with the accumulated scores.
     """

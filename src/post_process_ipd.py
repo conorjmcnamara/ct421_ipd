@@ -1,4 +1,3 @@
-import os
 import json
 from typing import List, Type, Dict, Tuple
 from src.ga.strategies import (
@@ -6,7 +5,6 @@ from src.ga.strategies import (
     AlwaysCooperate,
     AlwaysDefect,
     TitForTat,
-    RandomStrategy,
     TitForTwoTats,
     GrimTrigger,
     get_bit_representations_for_strategies
@@ -16,9 +14,9 @@ from src.ga.fitness import play_ipd
 
 def post_process_ipd(
     results_path: str,
-    evolved_strategy_dir: str,
+    evolved_strategy_path: str,
     strategies: List[Type[Strategy]] = [
-        AlwaysCooperate, AlwaysDefect, TitForTat, RandomStrategy, TitForTwoTats, GrimTrigger
+        AlwaysCooperate, AlwaysDefect, TitForTat, TitForTwoTats, GrimTrigger
     ],
     memory_size: int = 2,
     rounds: int = 50,
@@ -36,7 +34,7 @@ def post_process_ipd(
 
     Args:
         results_path: The path where the results will be saved.
-        evolved_strategy_dir: The directory containing the GA results JSON files.
+        evolved_strategy_path: The path to the GA results JSON file.
         strategies: A list of strategy classes to play against each other.
         memory_size: The number of past opponent moves each strategy considers (default: 2).
         rounds: The number of IPD rounds to play (default: 50).
@@ -44,22 +42,13 @@ def post_process_ipd(
         noise_rate: The probability of flipping a player's move (default: 0.0).
     """
     # Determine the evolved strategy
-    max_fitness = float("-inf")
-    best_solutions = []
+    with open(evolved_strategy_path, 'r') as file:
+        data = json.load(file)
+        best_solutions = data["results"]["best_solutions"]
 
-    for filename in os.listdir(evolved_strategy_dir):
-        if filename.endswith(".json"):
-            with open(os.path.join(evolved_strategy_dir, filename), 'r') as file:
-                data = json.load(file)
-                best_fitness = data["results"]["best_fitness"]
-
-                if best_fitness > max_fitness:
-                    max_fitness = best_fitness
-                    best_solutions = [data["results"]["best_solution"]]
-                elif best_fitness == max_fitness:
-                    best_solutions.append(data["results"]["best_solution"])
-
-    evolved_strategy = get_majority_strategy(best_solutions)
+        # Find the strategy with the highest count
+        best_strategy_str = max(best_solutions, key=best_solutions.get)
+        evolved_strategy = [int(bit) for bit in best_strategy_str.strip("()").split(", ")]
 
     # Create provided strategies
     strategy_representations = get_bit_representations_for_strategies(strategies, memory_size)
@@ -98,6 +87,7 @@ def post_process_ipd(
         results[strategy]["vs_opponents"] = dict(
             sorted(results[strategy]["vs_opponents"].items(), key=lambda x: x[1], reverse=True)
         )
+        results[strategy]["vs_opponents"]["total"] = sum(results[strategy]["vs_opponents"].values())
 
     ranked_results = dict(
         sorted(results.items(), key=lambda x: x[1]["overall_score"], reverse=True)
@@ -105,23 +95,3 @@ def post_process_ipd(
 
     with open(results_path, 'w') as file:
         json.dump(ranked_results, file, indent=4)
-
-
-def get_majority_strategy(strategies: List[List[int]]) -> List[int]:
-    """
-    Given a list of strategies, determines the majority strategy by taking the most common bit at
-    each index.
-
-    Args:
-        best_strategies: A list of strategies.
-
-    Returns:
-        The majority strategy.
-    """
-    transposed_bits = zip(*strategies)
-
-    majority_strategy = []
-    for bits in transposed_bits:
-        majority_strategy.append(1 if bits.count(1) > bits.count(0) else 0)
-
-    return majority_strategy

@@ -1,4 +1,4 @@
-# CT421 - Artificial Intelligence - Iterated Prisoner's Dilemma
+# CT421 - Artificial Intelligence - Evolutionary Game Theory
 
 A genetic algorithm implementation for evolving strategies to play the Iterated Prisoner's Dilemma.
 

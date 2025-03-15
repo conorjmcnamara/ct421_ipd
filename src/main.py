@@ -7,22 +7,20 @@ from src.ga.strategies import (
     AlwaysCooperate,
     AlwaysDefect,
     TitForTat,
-    RandomStrategy,
     TitForTwoTats,
     GrimTrigger
 )
 from src.ga.genetic_algorithm import GeneticAlgorithm
-from src.utils.analysis import analyse_results
 
 
 def run_ga(
     curr_dir: str = "",
-    population_sizes: List[int] = [50, 75, 100],
-    crossover_rates: List[float] = [0.7, 0.8, 0.9],
+    population_sizes: List[int] = [75],
+    crossover_rates: List[float] = [0.8],
     crossover_funcs: List[
         Callable[[List[int], List[int]], Tuple[List[int], List[int]]]
     ] = [single_point_crossover],
-    mutation_rates: List[float] = [0.05, 0.1, 0.2],
+    mutation_rates: List[float] = [0.05],
     mutation_funcs: List[Callable[[List[int], float], List[int]]] = [bit_flip_mutation],
     generations: int = 500,
     early_stop_threshold: int = 200,
@@ -33,7 +31,10 @@ def run_ga(
         [AlwaysDefect],
         [AlwaysCooperate, AlwaysDefect],
         [TitForTat],
-        [AlwaysCooperate, AlwaysDefect, TitForTat, RandomStrategy, TitForTwoTats, GrimTrigger]
+        [TitForTat, AlwaysDefect],
+        [TitForTwoTats],
+        [GrimTrigger],
+        [AlwaysCooperate, AlwaysDefect, TitForTat, TitForTwoTats, GrimTrigger]
     ],
     memory_size: int = 2,
     rounds: int = 50,
@@ -43,7 +44,7 @@ def run_ga(
         (1, 0): (5, 0),  # Player defects, opponent cooperates
         (1, 1): (1, 1)   # Both defect
     },
-    noise_rates: List[float] = [0, 0.05, 0.2],
+    noise_rates: List[float] = [0, 0.05, 0.1, 0.2],
     co_evolutions: List[bool] = [False, True]
 ) -> None:
     """
@@ -51,10 +52,10 @@ def run_ga(
 
     Args:
         curr_dir: The base directory where the results are stored (default: "").
-        population_sizes: A list of population sizes to test (default: [50, 75, 100]).
-        crossover_rates: A list of crossover rates to test (default: [0.7, 0.8, 0.9]).
+        population_sizes: A list of population sizes to test (default: [75]).
+        crossover_rates: A list of crossover rates to test (default: [0.8]).
         crossover_funcs: A list of crossover functions to test (default: [single_point_crossover]).
-        mutation_rates: A list of mutation rates to test (default: [0.05, 0.1, 0.2]).
+        mutation_rates: A list of mutation rates to test (default: [0.05]).
         mutation_funcs: A list of mutation functions to test (default: [bit_flip_mutation]).
         generations: The number of generations to run the algorithm for (default: 500).
         early_stop_threshold: The number of generations without improvement before stopping (
@@ -65,7 +66,7 @@ def run_ga(
         memory_size: The number of past opponent moves each strategy considers (default: 2).
         rounds: The number of IPD rounds to play (default: 50).
         payoff_matrix: A dictionary representing a payoff matrix.
-        noise_rates: A list of noise rates to test (default: [0, 0.05, 0.2]).
+        noise_rates: A list of noise rates to test (default: [0, 0.05, 0.1, 0.2]).
         co_evolutions: A list of co-evolution scenarios to test (default: [False, True]).
     """
     for i, opponents in enumerate(opponent_environments):
@@ -98,18 +99,20 @@ def run_ga(
                                     if co_evolution:
                                         results_path = os.path.join(
                                             curr_dir,
-                                            f"data/results/co-evo/env_{i}/{population_size}_pop_"
-                                            f"{crossover_rate}_{crossover_func.__name__}_"
-                                            f"{mutation_rate}_{mutation_func.__name__}_"
-                                            f"{noise_rate}_noise_{co_evolution}_co-evolution.json"
+                                            f"data/results/co-evo/env_{i}/{memory_size}_mem_"
+                                            f"{population_size}_pop_{crossover_rate}_"
+                                            f"{crossover_func.__name__}_{mutation_rate}_"
+                                            f"{mutation_func.__name__}_{noise_rate}_noise_"
+                                            f"{co_evolution}_co-evolution.json"
                                         )
                                     else:
                                         results_path = os.path.join(
                                             curr_dir,
-                                            f"data/results/env_{i}/{population_size}_pop_"
-                                            f"{crossover_rate}_{crossover_func.__name__}_"
-                                            f"{mutation_rate}_{mutation_func.__name__}_"
-                                            f"{noise_rate}_noise_{co_evolution}_co-evolution.json"
+                                            f"data/results/env_{i}/{memory_size}_mem_"
+                                            f"{population_size}_pop_{crossover_rate}_"
+                                            f"{crossover_func.__name__}_{mutation_rate}_"
+                                            f"{mutation_func.__name__}_{noise_rate}_noise_"
+                                            f"{co_evolution}_co-evolution.json"
                                         )
 
                                     ga.save_results(results_path)
@@ -117,4 +120,3 @@ def run_ga(
 
 if __name__ == "__main__":
     run_ga()
-    analyse_results("data/results/env_4/")

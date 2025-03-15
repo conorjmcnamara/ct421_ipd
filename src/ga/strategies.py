@@ -34,6 +34,7 @@ class AlwaysDefect(Strategy):
 
 class TitForTat(Strategy):
     def decide(self, history: List[int]) -> int:
+        # Cooperate on the first move, and copy the opponent's move thereafter
         return history[-1] if history else 0
 
 
@@ -47,6 +48,7 @@ class TitForTwoTats(Strategy):
 
 class GrimTrigger(Strategy):
     def decide(self, history: List[int]) -> int:
+        # Defects forever after a single defection
         return 1 if 1 in history else 0
 
 

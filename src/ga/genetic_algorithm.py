@@ -79,7 +79,7 @@ class GeneticAlgorithm:
         self.avg_fitness_per_gen = []
         self.best_fitness_per_gen = []
         self.best_fitness = float("-inf")
-        self.best_solution = None
+        self.best_solutions = []
         self.no_improvement_count = 0
 
     def evolve(self) -> None:
@@ -95,9 +95,10 @@ class GeneticAlgorithm:
 
             if gen_best_fitness > self.best_fitness:
                 self.best_fitness = gen_best_fitness
-                self.best_solution = copy.deepcopy(
-                    self.population[fitness_scores.index(gen_best_fitness)]
-                )
+                self.best_solutions = [
+                    copy.deepcopy(self.population[i])
+                    for i in range(self.population_size) if fitness_scores[i] == gen_best_fitness
+                ]
                 self.no_improvement_count = 0
             else:
                 self.no_improvement_count += 1
@@ -183,10 +184,15 @@ class GeneticAlgorithm:
         Args:
             path: The file path where the results will be saved.
         """
+        top_strategies = {}
+        for individual in self.best_solutions:
+            key = tuple(individual)
+            top_strategies[key] = top_strategies.get(key, 0) + 1
+
         results = {
             "results": {
                 "best_fitness": self.best_fitness,
-                "best_solution": self.best_solution,
+                "best_solutions": {str(k): v for k, v in top_strategies.items()},
                 "avg_fitness_per_gen": [round(fitness, 4) for fitness in self.avg_fitness_per_gen],
                 "best_fitness_per_gen": [round(fitness, 4) for fitness in self.best_fitness_per_gen]
             },
